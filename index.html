@@ -1,11 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        .theTable {
+          font-family: Arial, Helvetica, sans-serif;
+          border-collapse: collapse;
+         /* width: 100%;*/
+        }
+        
+        .theTable td, #theTable th {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+        
+        .theTable tr:nth-child(even){background-color: #f2f2f2;}
+        
+        .theTable tr:hover {background-color: #ddd;}
+        
+        .theTable th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          text-align: left;
+          background-color: #04AA6D;
+          color: white;
+        }
+        </style>
 </head>
+
 <body>
     <table class="theTable">
         <tr>
@@ -32,101 +58,174 @@
         </tr>
 
     </table>
-<script>
-//start server in terminal: json-server --watch ./data/MOCK_DATA.json
+    <script>
+        //start server in terminal: json-server --watch ./data/MOCK_DATA.json
 
-let rowDataForCancel=
-    {id:0,
-    name:"",
-    email:"",
-    address:""}
+        function ShowAlert(msg, duration, parent) {
+            let newCol = document.createElement("td");
+            newCol.setAttribute("style", "color:red;");
+            newCol.innerHTML = msg;
+            parent.appendChild(newCol)
+            setTimeout(function () {
+                newCol.parentNode.removeChild(newCol);
+            }, duration);
+            ;
+        }
 
-function cancelClickHandler(cancelButton)
-{
-    let tableRow=document.querySelector(`[id='${parseInt(cancelButton.id)}_data_row']`)
 
-    tableRow.innerHTML= `<tr class="data_row" id="${rowDataForCancel.id}_data_row">
-                    <td>${rowDataForCancel.id}</td>
-                    <td>${rowDataForCancel.name}</td>
-                    <td>${rowDataForCancel.email}</td>
-                    <td>${rowDataForCancel.address}</td>
-                    <td><button class="data_row_button" id="${rowDataForCancel.id}_edit" onclick="editClickHandler(this)">Edit</button></td>
-                    <td><button class="data_row_button" id="${rowDataForCancel.id}_delete" onclick="delClickHandler(this)">Delete</button></td>
+        let rowDataForCancel =
+        {
+            id: 0,
+            name: "",
+            email: "",
+            address: ""
+        }
+
+        let isUnderEdit = false
+
+        function creatRowInnerHtml(rowData) {
+            return `<tr class="data_row" id="${rowData.id}_data_row">
+                    <td>${rowData.id}</td>
+                    <td>${rowData.name}</td>
+                    <td>${rowData.email}</td>
+                    <td>${rowData.address}</td>
+                    <td><button class="data_row_button" id="${rowData.id}_edit" onclick="editClickHandler(this)">Edit</button></td>
+                    <td><button class="data_row_button" id="${rowData.id}_delete" onclick="delClickHandler(this)">Delete</button></td>
                     </tr>`
-}
+        }
 
-function editClickHandler(editButton)
-{
-    let tableRow=document.querySelector(`[id='${parseInt(editButton.id)}_data_row']`)
-    let row_data=document.querySelectorAll(`[id='${parseInt(editButton.id)}_data_row'] td`)
+        function newUserDefault() {
+            return `<td>Add</td>
+                    <td><input type="text" value="new"></td>
+                    <td><input type="text" value="user"></td>
+                    <td><input type="text" value="here."></td>
+                    <td><button onclick="saveNewClickHandler()">Save</button></td>
+                    <td><button onclick="cancelNewClickHandler()">Cancel</button></td>`
+        }
 
-    rowDataForCancel.id=row_data[0].innerHTML
-    rowDataForCancel.name=row_data[1].innerHTML
-    rowDataForCancel.email=row_data[2].innerHTML
-    rowDataForCancel.address=row_data[3].innerHTML
+        function saveNewClickHandler() {
+            const tableRow = document.querySelector(".new_user_form")
+            if (!isUnderEdit) {
+                const tableRows = document.querySelectorAll(".theTable tr")
+                let id_arr=[]
+                tableRows.forEach(row=>id_arr.push(row.children[0].innerHTML))
+
+                id_arr[0]='0'//delete table header and new user 
+                id_arr[1]='0'
+                console.log(id_arr)
+
+                id_arr=id_arr.map(item=>parseInt(item))
+                console.log(id_arr)
+                let new_id=Math.max(...id_arr)+1
+
+            }
+            else {
+                ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
+            }
+        }
+
+        function cancelNewClickHandler() {
+            const tableRow = document.querySelector(".new_user_form")
+            if (!isUnderEdit) {
+                tableRow.innerHTML = newUserDefault()
+            }
+            else {
+                ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
+            }
+        }
+
+        function saveClickHandler(saveButton) {
+            const tableRow = document.querySelector(`[id='${parseInt(saveButton.id)}_data_row']`)
+            const row_data = document.querySelectorAll(`[id='${parseInt(saveButton.id)}_data_row'] input`)
+            let row_data_obj =
+            {
+                id: parseInt(saveButton.id),
+                name: row_data[0].value,
+                email: row_data[1].value,
+                address: row_data[2].value
+            }
+            tableRow.innerHTML = creatRowInnerHtml(row_data_obj)
+            isUnderEdit = false
+        }
+
+        function cancelClickHandler(cancelButton) {
+            let tableRow = document.querySelector(`[id='${parseInt(cancelButton.id)}_data_row']`)
+
+            tableRow.innerHTML = creatRowInnerHtml(rowDataForCancel)
+            isUnderEdit = false
+        }
+
+        function editClickHandler(editButton) {
+
+            const tableRow = document.querySelector(`[id='${parseInt(editButton.id)}_data_row']`)
+            if (!isUnderEdit) {
+                let row_data = document.querySelectorAll(`[id='${parseInt(editButton.id)}_data_row'] td`)
+
+                rowDataForCancel.id = row_data[0].innerHTML
+                rowDataForCancel.name = row_data[1].innerHTML
+                rowDataForCancel.email = row_data[2].innerHTML
+                rowDataForCancel.address = row_data[3].innerHTML
 
 
-    tableRow.innerHTML= `<td><input type="text" value="${row_data[0].innerHTML}"></td>
+                tableRow.innerHTML = `<td>${row_data[0].innerHTML}</td>
                         <td><input type="text" value="${row_data[1].innerHTML}"></td>
                         <td><input type="text" value="${row_data[2].innerHTML}"></td>
                         <td><input type="text" value="${row_data[3].innerHTML}"></td>
-                        <td><button class="data_row_button" id="${parseInt(editButton.id)}_save">Save</button></td>
+                        <td><button class="data_row_button" id="${parseInt(editButton.id)}_save" onclick="saveClickHandler(this)">Save</button></td>
                         <td><button class="data_row_button" id="${parseInt(editButton.id)}_cancel" onclick="cancelClickHandler(this)">Cancel</button></td>`
-                    
-}
-function delClickHandler(delButton)
-{
+                isUnderEdit = true
+            }
+            else {
 
-    let tableRow=document.querySelector(`[id='${parseInt(delButton.id)}_data_row']`)
-    //let tableRow=document.getElementById(`${parseInt(delButton.id)}_data_row`)
+                ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
 
-    tableRow.remove();
+            }
+        }
+        function delClickHandler(delButton) {
 
-}
-    function updateFullTable(data)
-    {
-        let theTable=document.querySelector(".theTable")
-        let data_rows=data.map(item=>{
-            return `<tr class="data_row" id="${item.id}_data_row">
-                    <td>${item.id}</td>
-                    <td>${item.name}</td>
-                    <td>${item.email}</td>
-                    <td>${item.address}</td>
-                    <td><button class="data_row_button" id="${item.id}_edit" onclick="editClickHandler(this)">Edit</button></td>
-                    <td><button class="data_row_button" id="${item.id}_delete" onclick="delClickHandler(this)">Delete</button></td>
-                </tr>`
+            let tableRow = document.querySelector(`[id='${parseInt(delButton.id)}_data_row']`)
+            //let tableRow=document.getElementById(`${parseInt(delButton.id)}_data_row`)
+            if (!isUnderEdit) {
+                tableRow.remove();
+            }
+            else {
+                ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
+            }
+
+        }
+        function updateFullTable(data) {
+            let theTable = document.querySelector(".theTable")
+            let data_rows = data.map(item => {
+                return creatRowInnerHtml(item)
             }).join('');
 
-            theTable.innerHTML=`<tr>
+            theTable.innerHTML = `<tr>
                                     <th>ID</th>
                                     <th>NAME</th>
                                     <th>E-MAIL</th>
                                     <th>ADDRESS</th>
+                                    <th></th>
+                                    <th></th>
                                 </tr>
-                                <tr>
-                                    <td><input type="text" value="Add"></td>
-                                    <td><input type="text" value="new"></td>
-                                    <td><input type="text" value="user"></td>
-                                    <td><input type="text" value="here."></td>
-                                    <td><button>Save</button></td>
-                                    <td><button>Cancel</button></td>
+                                <tr class="new_user_form">
+                                    ${newUserDefault()}
                                 </tr>
-                                ${data_rows}`   
+                                ${data_rows}`
+        }
 
 
+        fetch(`http://localhost:3000/users`)
+            .then((response) => response.json())
+            .then(data => {
+                console.log(data)
+                updateFullTable(data)
+            })
 
-    }
-   
 
-    fetch(`http://localhost:3000/users`)
-    .then((response)=>response.json())
-    .then(data=>{console.log(data)
-            updateFullTable(data)})
-    
-
-</script>
+    </script>
 
 
 
 </body>
+
 </html>
