@@ -8,28 +8,33 @@
     <title>Document</title>
     <style>
         .theTable {
-          font-family: Arial, Helvetica, sans-serif;
-          border-collapse: collapse;
-         /* width: 100%;*/
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            /* width: 100%;*/
         }
-        
-        .theTable td, #theTable th {
-          border: 1px solid #ddd;
-          padding: 8px;
+
+        .theTable td,
+        #theTable th {
+            border: 1px solid #ddd;
+            padding: 8px;
         }
-        
-        .theTable tr:nth-child(even){background-color: #f2f2f2;}
-        
-        .theTable tr:hover {background-color: #ddd;}
-        
+
+        .theTable tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .theTable tr:hover {
+            background-color: #ddd;
+        }
+
         .theTable th {
-          padding-top: 12px;
-          padding-bottom: 12px;
-          text-align: left;
-          background-color: #04AA6D;
-          color: white;
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #04AA6D;
+            color: white;
         }
-        </style>
+    </style>
 </head>
 
 <body>
@@ -60,10 +65,39 @@
     </table>
     <script>
         //start server in terminal: json-server --watch ./data/MOCK_DATA.json
+        const validateEmail = (email) => {
+            return String(email)
+                .toLowerCase()
+                .match(
+                    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                );
+        };
 
-        function ShowAlert(msg, duration, parent) {
+        const validateName = (name) => {
+            return String(name)
+                .match(
+                    /^[A-Z][a-z]+\s[A-Z][a-z]+$/
+                );
+        };
+
+        const validateAddress = (address) => {
+            return String(address)
+                .match(
+                    /^[0-9]+\s[A-Z][a-z]+\s[A-Z][a-z]+(\s[A-Z][a-z]+)?$/
+                );
+        };
+
+        function validateUserData(user) {
+            return validateEmail(user.email) &&
+                validateName(user.name) &&
+                validateAddress(user.address)
+        }
+
+
+
+        function ShowAlert(msg, duration, parent,color='red') {
             let newCol = document.createElement("td");
-            newCol.setAttribute("style", "color:red;");
+            newCol.setAttribute("style", `color:${color};`);
             newCol.innerHTML = msg;
             parent.appendChild(newCol)
             setTimeout(function () {
@@ -105,19 +139,52 @@
 
         function saveNewClickHandler() {
             const tableRow = document.querySelector(".new_user_form")
+            const new_user_data = document.querySelectorAll(".new_user_form input")
             if (!isUnderEdit) {
                 const tableRows = document.querySelectorAll(".theTable tr")
-                let id_arr=[]
-                tableRows.forEach(row=>id_arr.push(row.children[0].innerHTML))
+                let id_arr = []
+                tableRows.forEach(row => id_arr.push(row.children[0].innerHTML))
 
-                id_arr[0]='0'//delete table header and new user 
-                id_arr[1]='0'
-                console.log(id_arr)
+                id_arr[0] = '0'//delete table header and new user 
+                id_arr[1] = '0'
 
-                id_arr=id_arr.map(item=>parseInt(item))
-                console.log(id_arr)
-                let new_id=Math.max(...id_arr)+1
+                id_arr = id_arr.map(item => parseInt(item))
 
+                let new_id = Math.max(...id_arr) + 1
+
+                const firstUserRow = document.querySelector(".theTable tr:nth-of-type(3)")
+
+                let row_data_obj =
+                {
+                    id: new_id,
+                    name: new_user_data[0].value,
+                    email: new_user_data[1].value,
+                    address: new_user_data[2].value
+                }
+                if (validateUserData(row_data_obj)) {
+                    const newUserRow = document.createElement('tr')
+                    firstUserRow.parentElement.insertBefore(newUserRow, firstUserRow);
+                    newUserRow.setAttribute("id", `${new_id}_data_row`);
+                    newUserRow.setAttribute("class", "data_row");
+                    newUserRow.innerHTML = creatRowInnerHtml(row_data_obj)
+                    tableRow.innerHTML = newUserDefault()
+                    ShowAlert('Success', 5000, tableRow,'green')
+                  
+                }
+                else {
+                    if (!validateName(row_data_obj.name)) {
+                        ShowAlert("Name is not valid!", 5000, tableRow)
+                    }
+                    if (!validateEmail(row_data_obj.email)) {
+                        ShowAlert("Email is not valid!", 5000, tableRow)
+                    }
+                    if (!validateAddress(row_data_obj.address)) {
+                        ShowAlert("Address is not valid!", 5000, tableRow)
+                    }
+                }
+
+                
+                
             }
             else {
                 ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
@@ -144,8 +211,22 @@
                 email: row_data[1].value,
                 address: row_data[2].value
             }
-            tableRow.innerHTML = creatRowInnerHtml(row_data_obj)
-            isUnderEdit = false
+            if (validateUserData(row_data_obj)) {
+                tableRow.innerHTML = creatRowInnerHtml(row_data_obj)
+                isUnderEdit = false
+                ShowAlert('Success', 5000, tableRow,'green')
+            }
+            else {
+                if (!validateName(row_data_obj.name)) {
+                    ShowAlert("Name is not valid!", 5000, tableRow)
+                }
+                if (!validateEmail(row_data_obj.email)) {
+                    ShowAlert("Email is not valid!", 5000, tableRow)
+                }
+                if (!validateAddress(row_data_obj.address)) {
+                    ShowAlert("Address is not valid!", 5000, tableRow)
+                }
+            }
         }
 
         function cancelClickHandler(cancelButton) {
