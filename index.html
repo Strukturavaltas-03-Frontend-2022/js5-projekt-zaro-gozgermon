@@ -6,40 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <style>
-        .theTable {
-            font-family: Arial, Helvetica, sans-serif;
-            border-collapse: collapse;
-            /* width: 100%;*/
-        }
-
-        .theTable td,
-        #theTable th {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-
-        .theTable tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        .theTable tr:hover {
-            background-color: #ddd;
-        }
-
-        .theTable th {
-            padding-top: 12px;
-            padding-bottom: 12px;
-            text-align: left;
-            background-color: #04AA6D;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <body>
     <table class="theTable">
-        <tr>
+        <!-- <tr>
             <th>ID</th>
             <th>NAME</th>
             <th>E-MAIL</th>
@@ -60,11 +32,57 @@
             <td><input type="text" value="112 nowhere str Dunno"></td>
             <td><button>Save</button></td>
             <td><button>Cancel</button></td>
-        </tr>
+        </tr>-->
 
     </table>
-    <script>
-        //start server in terminal: json-server --watch ./data/MOCK_DATA.json
+
+    <script type="module">
+        import {
+            rowDataForCancel,
+            isUnderEdit
+        } from "/js/variables.js"
+        import {
+            updateFullTable
+        } from "/js/misc.js"
+
+        import {
+            saveNewClickHandler,
+            cancelNewClickHandler,
+            saveClickHandler,
+            cancelClickHandler,
+            editClickHandler,
+            delClickHandler
+        } from "/js/eventHandlers.js"
+
+        window.saveNewClickHandler=saveNewClickHandler
+        window.cancelNewClickHandler=cancelNewClickHandler
+        window.saveClickHandler=saveClickHandler
+        window.cancelClickHandler=cancelClickHandler
+        window.editClickHandler=editClickHandler
+        window.delClickHandler=delClickHandler
+        window.isUnderEdit=isUnderEdit
+        window.rowDataForCancel=rowDataForCancel
+
+        fetch(`http://localhost:3000/users`)
+            .then((response) => response.json())
+            .then(data => {
+                console.log(data)
+                updateFullTable(data)
+            })
+
+    </script>
+    <!--    <script>
+//start server in terminal: json-server --watch ./data/MOCK_DATA.json
+        let rowDataForCancel =
+        {
+            id: 0,
+            name: "",
+            email: "",
+            address: ""
+        }
+
+        let isUnderEdit = false
+      
         const validateEmail = (email) => {
             return String(email)
                 .toLowerCase()
@@ -93,9 +111,7 @@
                 validateAddress(user.address)
         }
 
-
-
-        function ShowAlert(msg, duration, parent,color='red') {
+        function ShowAlert(msg, duration, parent, color = 'red') {
             let newCol = document.createElement("td");
             newCol.setAttribute("style", `color:${color};`);
             newCol.innerHTML = msg;
@@ -105,17 +121,6 @@
             }, duration);
             ;
         }
-
-
-        let rowDataForCancel =
-        {
-            id: 0,
-            name: "",
-            email: "",
-            address: ""
-        }
-
-        let isUnderEdit = false
 
         function creatRowInnerHtml(rowData) {
             return `<tr class="data_row" id="${rowData.id}_data_row">
@@ -136,6 +141,53 @@
                     <td><button onclick="saveNewClickHandler()">Save</button></td>
                     <td><button onclick="cancelNewClickHandler()">Cancel</button></td>`
         }
+
+        function deleteDataFromServer(row)
+        {
+            let fetchopt={
+                method: "DELETE",
+                mode: "cors",
+                cashe: "no-cache"
+            }
+            fetch(`http://localhost:3000/users/${row.children[0].innerHTML}`,fetchopt).then(
+                resp=>resp.json(),
+                err=>console.error(err)
+            ).then(data=>{})
+        }
+
+        function saveNewDataToServer(row_data_obj){
+            let fetchopt={
+                method: "POST",
+                mode: "cors",
+                cashe: "no-cache",
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body: JSON.stringify(row_data_obj)
+            }
+            fetch(`http://localhost:3000/users`,fetchopt).then(
+                resp=>resp.json(),
+                err=>console.error(err)
+            ).then(data=>{})
+        }
+
+        function updateDataOnServer(row_data_obj){
+            let fetchopt={
+                method: "PUT",
+                mode: "cors",
+                cashe: "no-cache",
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body: JSON.stringify(row_data_obj)
+            }
+            fetch(`http://localhost:3000/users/${row_data_obj.id}`,fetchopt).then(
+                resp=>resp.json(),
+                err=>console.error(err)
+            ).then(data=>{})
+        }
+
+
 
         function saveNewClickHandler() {
             const tableRow = document.querySelector(".new_user_form")
@@ -168,8 +220,9 @@
                     newUserRow.setAttribute("class", "data_row");
                     newUserRow.innerHTML = creatRowInnerHtml(row_data_obj)
                     tableRow.innerHTML = newUserDefault()
-                    ShowAlert('Success', 5000, tableRow,'green')
-                  
+                    saveNewDataToServer(row_data_obj)
+                    ShowAlert('Success', 5000, tableRow, 'green')
+
                 }
                 else {
                     if (!validateName(row_data_obj.name)) {
@@ -183,8 +236,8 @@
                     }
                 }
 
-                
-                
+
+
             }
             else {
                 ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
@@ -194,6 +247,7 @@
         function cancelNewClickHandler() {
             const tableRow = document.querySelector(".new_user_form")
             if (!isUnderEdit) {
+                deleteDataFromServer(tableRow)
                 tableRow.innerHTML = newUserDefault()
             }
             else {
@@ -214,7 +268,8 @@
             if (validateUserData(row_data_obj)) {
                 tableRow.innerHTML = creatRowInnerHtml(row_data_obj)
                 isUnderEdit = false
-                ShowAlert('Success', 5000, tableRow,'green')
+                ShowAlert('Success', 5000, tableRow, 'green')
+                updateDataOnServer(row_data_obj)
             }
             else {
                 if (!validateName(row_data_obj.name)) {
@@ -268,6 +323,7 @@
             //let tableRow=document.getElementById(`${parseInt(delButton.id)}_data_row`)
             if (!isUnderEdit) {
                 tableRow.remove();
+                deleteDataFromServer(tableRow);
             }
             else {
                 ShowAlert("Először be kell fejezned az aktuális szerkesztést!", 5000, tableRow)
@@ -294,7 +350,7 @@
                                 ${data_rows}`
         }
 
-
+        console.log('new run')
         fetch(`http://localhost:3000/users`)
             .then((response) => response.json())
             .then(data => {
@@ -303,7 +359,7 @@
             })
 
 
-    </script>
+    </script>-->
 
 
 
